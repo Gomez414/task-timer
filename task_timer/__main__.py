@@ -2,8 +2,12 @@ import click
 import csv
 import time
 
+tasks = []
+
 @click.command()
 def menu():
+    
+
 
     click.echo("\nCHOICES:")
     click.echo("---------")
@@ -11,8 +15,8 @@ def menu():
     click.echo("\n(D)........Delete a task.")
     click.echo("\n(S)........Start timing a task.")
     click.echo("\n(P)........Stop timing a task.")
-    click.echo("\n(E)........Exit.")
     click.echo("\n(F)........Export timesheet as CVS file.")
+    click.echo("\n(E)........Exit.")
     click.echo("\nInput the indicated letter for the option you wish to select: ")
 
     choice = input()
@@ -35,65 +39,80 @@ def menu():
     if choice == 'E':
         exit()
 
-@click.command()
+
 def create_task():
 
-    create = input("\nCreate a task: ")
-    tasks.append(create)
+    task_name = input("\nCreate a task: ")
+    tasks.append({"name": task_name, "status": None})
+
+    show_tasks()
 
 
-    click.echo("\nTASKS:")
-    click.echo("-------")
-
-    for i, item in enumerate(tasks, start=1):
-        click.echo(f"{i}. {item}")
-
-    return menu()
-
-@click.command()
 def delete_task():
 
-    index = int(input()) - 1
+    index = int(input("\nEnter the task number you wish to delete: ")) - 1
     tasks.pop(index)
 
-    for i, item in enumerate(tasks, start=1):
-        click.echo(f"{i}. {item}")
+    show_tasks()
 
 @click.command()
 def start_timer():
-    task_choice = input("/nEnter the name of the task you wish to start: ")
+    start_choice = (int(input("\nEnter the task number you wish to start timing: "))) - 1
 
-    tasks[task_choice] = time.time()
+    tasks[start_choice]["status"] = time.time()
 
-    click.echo(f"{task_choice} started at {tasks}")
+    click.echo(f"Timer for {tasks[start_choice]["name"]} started!")
+
+    show_tasks()
     
-
+@click.command()
 def stop_timer():
+    stop_choice = (int(input("\nEnter the task number you wish to stop timing: "))) - 1
 
+    start_time = tasks[stop_choice]["status"]
+    elapsed_time = time.time() - start_time
+    mins, secs = divmod(int(elapsed_time), 60)
+    tasks[stop_choice]["status"] = None
+
+    click.echo(f"\nTask '{tasks[stop_choice]["name"]}' is now stopped.")
+    click.echo(f"Elapsed Time of Task -> {mins:02}:{secs:02}")
+
+    show_tasks()
 
 
 def export_as_cvs_file():
 
     with open('timesheet.csv', 'w', newline='') as csvfile:
 
-        fieldnames = ['task_name', 'start_time', 'status']
+        fieldnames = ['name', 'status']
 
         thewriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         thewriter.writeheader()
 
         for task in tasks:
-            thewriter.writerow({'task_name': task })
+            thewriter.writerow({'name': task, 'status': tasks[task]["status"]})
 
     return menu()
 
-
-
-tasks = []
-
 @click.command()
+def show_tasks():
+
+    click.echo("\nTASKS:")
+    click.echo("-------")
+
+    for i, task in enumerate(tasks, start=1):
+        if task["status"]:
+            timer_status = "Currently Running"
+        else:
+            timer_status = "Timer Not Started"
+
+        click.echo(f"{i}. {task['name']} -> {timer_status}")
+    
+    return menu()
+
+
 def main():
-    """This is my main cli."""
         
     menu()
     
