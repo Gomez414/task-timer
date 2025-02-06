@@ -24,26 +24,26 @@ def menu():
     if choice == 'C':
         create_task()
 
-    if choice == 'D':
+    elif choice == 'D':
         delete_task()
 
-    if choice == 'S':
+    elif choice == 'S':
         start_timer()
 
-    if choice == 'P':
+    elif choice == 'P':
         stop_timer()
 
-    if choice == "F":
+    elif choice == "F":
         export_as_cvs_file()
 
-    if choice == 'E':
+    elif choice == 'E':
         exit()
 
 
 def create_task():
 
     task_name = input("\nCreate a task: ")
-    tasks.append({"name": task_name, "status": None})
+    tasks.append({"name": task_name, "status": None, "time_taken": None})
 
     show_tasks()
 
@@ -72,26 +72,38 @@ def stop_timer():
     start_time = tasks[stop_choice]["status"]
     elapsed_time = time.time() - start_time
     mins, secs = divmod(int(elapsed_time), 60)
-    tasks[stop_choice]["status"] = None
+    tasks[stop_choice]["status"] = "Complete"
+    tasks[stop_choice]["time_taken"] = f"00:00 to {mins:02}:{secs:02}"
 
     click.echo(f"\nTask '{tasks[stop_choice]["name"]}' is now stopped.")
-    click.echo(f"Elapsed Time of Task -> {mins:02}:{secs:02}")
+    click.echo(f"Time of Task -> 00:00 to {mins:02}:{secs:02}")
 
     show_tasks()
 
 
+@click.command()
 def export_as_cvs_file():
 
     with open('timesheet.csv', 'w', newline='') as csvfile:
 
-        fieldnames = ['name', 'status']
+        fieldnames = ['name', 'status', 'time']
 
         thewriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
         thewriter.writeheader()
 
         for task in tasks:
-            thewriter.writerow({'name': task, 'status': tasks[task]["status"]})
+
+            if task["status"] == "Complete":
+                timer_status = "Complete"
+            elif task["status"]:
+                timer_status = "Currently Running"
+            else:
+                timer_status = "Timer Not Started"
+            
+            thewriter.writerow({'name': task["name"], 'status': timer_status, 'time':task["time_taken"]})
+
+    click.echo(f"\nTimsheet exported!")
 
     return menu()
 
@@ -102,7 +114,10 @@ def show_tasks():
     click.echo("-------")
 
     for i, task in enumerate(tasks, start=1):
-        if task["status"]:
+
+        if task["status"] == "Complete":
+            timer_status = "Complete"
+        elif task["status"]:
             timer_status = "Currently Running"
         else:
             timer_status = "Timer Not Started"
