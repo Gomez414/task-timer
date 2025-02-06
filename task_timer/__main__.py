@@ -6,8 +6,7 @@ tasks = []
 
 @click.command()
 def menu():
-    
-
+    """ Allow the user to manipulate the task timer. """
 
     click.echo("\nCHOICES:")
     click.echo("---------")
@@ -15,6 +14,7 @@ def menu():
     click.echo("\n(D)........Delete a task.")
     click.echo("\n(S)........Start timing a task.")
     click.echo("\n(P)........Stop timing a task.")
+    click.echo("\n(T)........Print/Show current task list/timesheet.")
     click.echo("\n(F)........Export timesheet as CVS file.")
     click.echo("\n(E)........Exit.")
     click.echo("\nInput the indicated letter for the option you wish to select: ")
@@ -33,6 +33,9 @@ def menu():
     elif choice == 'P':
         stop_timer()
 
+    elif choice == 'T':
+        show_tasks()
+
     elif choice == "F":
         export_as_cvs_file()
 
@@ -41,6 +44,7 @@ def menu():
 
 
 def create_task():
+    """ Input task into task list. """
 
     task_name = input("\nCreate a task: ")
     tasks.append({"name": task_name, "status": None, "time_taken": None})
@@ -49,14 +53,18 @@ def create_task():
 
 
 def delete_task():
+    """ Remove a task from the task list. """
 
     index = int(input("\nEnter the task number you wish to delete: ")) - 1
     tasks.pop(index)
 
     show_tasks()
 
+
 @click.command()
 def start_timer():
+    """ Begin the timer on a specific task chosen by the user. """
+
     start_choice = (int(input("\nEnter the task number you wish to start timing: "))) - 1
 
     tasks[start_choice]["status"] = time.time()
@@ -64,9 +72,12 @@ def start_timer():
     click.echo(f"Timer for {tasks[start_choice]["name"]} started!")
 
     show_tasks()
-    
+
+
 @click.command()
 def stop_timer():
+    """ Stop the timer on a specific task chosen by the user. """
+
     stop_choice = (int(input("\nEnter the task number you wish to stop timing: "))) - 1
 
     start_time = tasks[stop_choice]["status"]
@@ -83,6 +94,7 @@ def stop_timer():
 
 @click.command()
 def export_as_cvs_file():
+    """ Export timesheet (task list) to a CVS file. """
 
     with open('timesheet.csv', 'w', newline='') as csvfile:
 
@@ -107,8 +119,10 @@ def export_as_cvs_file():
 
     return menu()
 
+
 @click.command()
 def show_tasks():
+    """ Print the current task list. """
 
     click.echo("\nTASKS:")
     click.echo("-------")
@@ -128,7 +142,8 @@ def show_tasks():
 
 
 def main():
-        
+    """ Operate the task timer and its functions. """
+
     menu()
     
 
