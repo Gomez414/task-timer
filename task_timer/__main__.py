@@ -7,8 +7,10 @@ This module holds the main code for this Python Task Timer Project.
 
 import csv
 from datetime import datetime
+import pytz
+import shutil
 
-tasks = []
+central_time = pytz.timezone("US/Central")
 
 def menu():
     """ Allow the user to manipulate the task timer. """
@@ -20,7 +22,7 @@ def menu():
     print("\n(S)........Start timing a task.")
     print("\n(P)........Stop timing a task.")
     print("\n(T)........Print/Show current task list/timesheet.")
-    print("\n(F)........Export timesheet as CVS file.")
+    print("\n(F)........Export timesheet as CSV file.")
     print("\n(E)........Exit.")
     print("\nInput the indicated letter for the option you wish to select: ")
 
@@ -43,7 +45,7 @@ def menu():
             show_tasks()
 
         elif choice == "F":
-            export_as_cvs_file()
+            export_as_csv_file()
 
         elif choice == 'E':
             exit()
@@ -57,7 +59,15 @@ def create_task():
     """ Input task into task list. """
 
     task_name = input("\nCreate a task: ")
-    tasks.append({"name": task_name, "status": None, "time_taken": None})
+
+    task_data = {"name": task_name, "status": "Task Not Started", "time_taken": "N/A"}
+
+    with open("timesheet.csv", mode="a", newline="") as csvfile:
+        fieldnames = ['name', 'status', 'time_taken']
+        thewriter = csv.DictWriter(csvfile, fieldnames=fieldnames)        
+        thewriter.writerow(task_data)
+
+    print(f"\nTask '{task_name}' has been created!")
 
     show_tasks()
 
@@ -65,84 +75,137 @@ def create_task():
 def delete_task():
     """ Remove a task from the task list. """
 
-    while True:
-        try:
-            index = int(input("\nEnter the task number you wish to delete: ")) - 1
-            tasks.pop(index)
-            show_tasks()
-        
-        except ValueError:
-            print("Invalid input. Please enter a valid task number.")
-        except IndexError:
-            print("Invalid task number. Please enter a number in the list.")
+    task_to_delete = input("\nEnter the task name you wish to delete: ")
+    kept_tasks = []
+    task_found = False
+
+    with open("timesheet.csv", mode="r", newline="") as csvfile:
+        reader = csv.DictReader(csvfile)
+
+        for row in reader:
+            if row["name"] != task_to_delete:
+                kept_tasks.append(row)
+
+            else:
+                task_found = True
+    
+    if not task_found:
+        print(f"\nNo task with the name '{task_to_delete}' found.")
+        delete_task()
+    
+    else:
+        with open("timesheet.csv", mode="w", newline="") as csvfile:
+            fieldnames = ['name', 'status', 'time_taken']
+            thewriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+            thewriter.writeheader()
+            thewriter.writerows(kept_tasks)
+
+        print(f"\nTask '{task_to_delete}' has been deleted!")
+
+        show_tasks()
 
 
 
 def start_timer():
     """ Begin the timer on a specific task chosen by the user. """
 
-    while True:
-        try:
-            start_choice = (int(input("\nEnter the task number you wish to start timing: "))) - 1
+    started_task = (input("\nEnter the task name you wish to start timing: "))
+    updated_tasks = []
+    task_found = False
 
-            tasks[start_choice]["status"] = datetime.now()
+    with open("timesheet.csv", mode="r", newline="") as csvfile:
+        reader = csv.DictReader(csvfile)
 
-            print(f"Timer for {tasks[start_choice]["name"]} started!")
+        for row in reader:
+            if row["name"] == started_task:
+                row["status"] = "Currently Running"
+                start_time = datetime.now(central_time)
+                row["time_taken"] = start_time.strftime("%m-%d-%Y %I:%M:%S:%p")
+                updated_tasks.append(row)
+                task_found = True
+            
+            else:
+                updated_tasks.append(row)
+    
+    if not task_found:
+        print(f"\nNo task with the name '{started_task}' found.")
+        start_timer()
+    
+    else:
+        with open("timesheet.csv", mode="w", newline="") as csvfile:
+            fieldnames = ['name', 'status', 'time_taken']
+            thewriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
 
-            show_tasks()
+            thewriter.writeheader()
+            thewriter.writerows(updated_tasks)
 
-        except ValueError:
-            print("Invalid input. Please enter a valid task number.")
-        except IndexError:
-            print("Invalid task number. Please enter a number in the list.")
+        print(f"\nTask '{started_task}' has been started!")
+
+        show_tasks()
 
 
 def stop_timer():
     """ Stop the timer on a specific task chosen by the user. """
 
-    while True:
-        try:
-            stop_choice = (int(input("\nEnter the task number you wish to stop timing: "))) - 1
-
-            start_time = tasks[stop_choice]["status"]
-            elapsed_time = datetime.now() - start_time
-            elapsed_seconds = int(elapsed_time.total_seconds())
-            mins, secs = divmod(elapsed_seconds, 60)
-            tasks[stop_choice]["status"] = "Complete"
-            tasks[stop_choice]["time_taken"] = f"00:00 to {mins:02}:{secs:02}"
-
-            print(f"\nTask '{tasks[stop_choice]["name"]}' is now stopped.")
-            print(f"Time of Task -> 00:00 to {mins:02}:{secs:02}")
-
-            show_tasks()
-
-        except ValueError:
-            print("Invalid input. Please enter a valid task number.")
-        except IndexError:
-            print("Invalid task number. Please enter a number in the list.")
+    stopped_task = (input("\nEnter the task name you wish to stop timing: "))
+    updated_tasks = []
+    task_found = False
 
 
-def export_as_cvs_file():
-    """ Export timesheet (task list) to a CVS file. """
+    with open("timesheet.csv", mode="r", newline="") as csvfile:
+        reader = csv.DictReader(csvfile)
 
-    with open('timesheet.csv', 'w', newline='') as csvfile:
+        for row in reader:
+            if row["name"] == stopped_task:
+                row["status"] = "Task Finished"
 
-        fieldnames = ['name', 'status', 'time']
+                start_time_str = row["time_taken"]
+                start_time = datetime.strptime(start_time_str, "%m-%d-%Y %I:%M:%S:%p")
+                start_time = central_time.localize(start_time)
+                start_time = start_time.replace(microsecond=0)
 
-        thewriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                end_time = datetime.now(central_time)
+                end_time = end_time.replace(microsecond=0)
 
-        thewriter.writeheader()
+                elapsed_time = end_time - start_time
 
-        for task in tasks:
+                total_seconds = elapsed_time.total_seconds()
 
-            if task["status"] == "Complete":
-                timer_status = "Complete"
-            elif task["status"]:
-                timer_status = "Currently Running"
-            else:
-                timer_status = "Timer Not Started"
+                hours, remainder = divmod(total_seconds, 3600)
+                minutes, seconds = divmod(remainder, 60)
+
+                formatted_elapsed_time = f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}"
+                row["time_taken"] = formatted_elapsed_time
+
+                updated_tasks.append(row)
+                task_found = True
             
-            thewriter.writerow({'name': task["name"], 'status': timer_status, 'time':task["time_taken"]})
+            else:
+                updated_tasks.append(row)
+    
+    if not task_found:
+        print(f"\nNo task with the name '{stopped_task}' found.")
+        stop_timer()
+    
+    else:
+        with open("timesheet.csv", mode="w", newline="") as csvfile:
+            fieldnames = ['name', 'status', 'time_taken']
+            thewriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+            thewriter.writeheader()
+            thewriter.writerows(updated_tasks)
+
+        print(f"\nTask '{stopped_task}' has been stopped! It took {elapsed_time} (hours:min:sec).")
+
+        show_tasks()
+
+
+def export_as_csv_file():
+    """ Export timesheet (task list) to a desired CVS file. """
+
+    desired_file = input("\nCreate a filename you wish to export the time sheet to. Please add .csv to the end of the filename: ")
+    shutil.copy("timesheet.csv", desired_file)
 
     print(f"\nTimsheet exported!")
 
@@ -155,23 +218,30 @@ def show_tasks():
     print("\nTASKS:")
     print("-------")
 
-    for i, task in enumerate(tasks, start=1):
+    with open("timesheet.csv", mode="r") as csvfile:
+        reader = csv.DictReader(csvfile)
+        
+        for row in reader:
+            print(f"Task: {row['name']}, Status: {row['status']}, Time Taken: {row['time_taken']}")
 
-        if task["status"] == "Complete":
-            timer_status = "Complete"
-        elif task["status"]:
-            timer_status = "Currently Running"
-        else:
-            timer_status = "Timer Not Started"
-
-        print(f"{i}. {task['name']} -> {timer_status}")
-    
     return menu()
+
+def create_timesheet():
+    """ Create the timesheet file that the user will be modifying. """
+
+    with open("timesheet.csv", mode="w", newline="") as csvfile:
+        fieldnames = ['name', 'status', 'time_taken']
+
+        thewriter = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+        thewriter.writeheader()
+        
 
 
 def main():
     """ Operate the task timer and its functions. """
 
+    create_timesheet()
     menu()
     
 
