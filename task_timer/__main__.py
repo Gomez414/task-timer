@@ -1,46 +1,56 @@
-import click
+""" 
+main.py
+Abe Gomez <abraham.gomez@student.cune.edu>
+This module holds the main code for this Python Task Timer Project.
+"""
+
+
 import csv
-import time
+from datetime import datetime
 
 tasks = []
 
-@click.command()
 def menu():
     """ Allow the user to manipulate the task timer. """
 
-    click.echo("\nCHOICES:")
-    click.echo("---------")
-    click.echo("\n(C)........Create a task.")
-    click.echo("\n(D)........Delete a task.")
-    click.echo("\n(S)........Start timing a task.")
-    click.echo("\n(P)........Stop timing a task.")
-    click.echo("\n(T)........Print/Show current task list/timesheet.")
-    click.echo("\n(F)........Export timesheet as CVS file.")
-    click.echo("\n(E)........Exit.")
-    click.echo("\nInput the indicated letter for the option you wish to select: ")
+    print("\nCHOICES:")
+    print("---------")
+    print("\n(C)........Create a task.")
+    print("\n(D)........Delete a task.")
+    print("\n(S)........Start timing a task.")
+    print("\n(P)........Stop timing a task.")
+    print("\n(T)........Print/Show current task list/timesheet.")
+    print("\n(F)........Export timesheet as CVS file.")
+    print("\n(E)........Exit.")
+    print("\nInput the indicated letter for the option you wish to select: ")
 
-    choice = input()
+    while True:
+        choice = input()
 
-    if choice == 'C':
-        create_task()
+        if choice == 'C':
+            create_task()
 
-    elif choice == 'D':
-        delete_task()
+        elif choice == 'D':
+            delete_task()
 
-    elif choice == 'S':
-        start_timer()
+        elif choice == 'S':
+            start_timer()
 
-    elif choice == 'P':
-        stop_timer()
+        elif choice == 'P':
+            stop_timer()
 
-    elif choice == 'T':
-        show_tasks()
+        elif choice == 'T':
+            show_tasks()
 
-    elif choice == "F":
-        export_as_cvs_file()
+        elif choice == "F":
+            export_as_cvs_file()
 
-    elif choice == 'E':
-        exit()
+        elif choice == 'E':
+            exit()
+
+        else:
+            print("Invalid input. Please try again.")
+
 
 
 def create_task():
@@ -55,44 +65,63 @@ def create_task():
 def delete_task():
     """ Remove a task from the task list. """
 
-    index = int(input("\nEnter the task number you wish to delete: ")) - 1
-    tasks.pop(index)
+    while True:
+        try:
+            index = int(input("\nEnter the task number you wish to delete: ")) - 1
+            tasks.pop(index)
+            show_tasks()
+        
+        except ValueError:
+            print("Invalid input. Please enter a valid task number.")
+        except IndexError:
+            print("Invalid task number. Please enter a number in the list.")
 
-    show_tasks()
 
 
-@click.command()
 def start_timer():
     """ Begin the timer on a specific task chosen by the user. """
 
-    start_choice = (int(input("\nEnter the task number you wish to start timing: "))) - 1
+    while True:
+        try:
+            start_choice = (int(input("\nEnter the task number you wish to start timing: "))) - 1
 
-    tasks[start_choice]["status"] = time.time()
+            tasks[start_choice]["status"] = datetime.now()
 
-    click.echo(f"Timer for {tasks[start_choice]["name"]} started!")
+            print(f"Timer for {tasks[start_choice]["name"]} started!")
 
-    show_tasks()
+            show_tasks()
+
+        except ValueError:
+            print("Invalid input. Please enter a valid task number.")
+        except IndexError:
+            print("Invalid task number. Please enter a number in the list.")
 
 
-@click.command()
 def stop_timer():
     """ Stop the timer on a specific task chosen by the user. """
 
-    stop_choice = (int(input("\nEnter the task number you wish to stop timing: "))) - 1
+    while True:
+        try:
+            stop_choice = (int(input("\nEnter the task number you wish to stop timing: "))) - 1
 
-    start_time = tasks[stop_choice]["status"]
-    elapsed_time = time.time() - start_time
-    mins, secs = divmod(int(elapsed_time), 60)
-    tasks[stop_choice]["status"] = "Complete"
-    tasks[stop_choice]["time_taken"] = f"00:00 to {mins:02}:{secs:02}"
+            start_time = tasks[stop_choice]["status"]
+            elapsed_time = datetime.now() - start_time
+            elapsed_seconds = int(elapsed_time.total_seconds())
+            mins, secs = divmod(elapsed_seconds, 60)
+            tasks[stop_choice]["status"] = "Complete"
+            tasks[stop_choice]["time_taken"] = f"00:00 to {mins:02}:{secs:02}"
 
-    click.echo(f"\nTask '{tasks[stop_choice]["name"]}' is now stopped.")
-    click.echo(f"Time of Task -> 00:00 to {mins:02}:{secs:02}")
+            print(f"\nTask '{tasks[stop_choice]["name"]}' is now stopped.")
+            print(f"Time of Task -> 00:00 to {mins:02}:{secs:02}")
 
-    show_tasks()
+            show_tasks()
+
+        except ValueError:
+            print("Invalid input. Please enter a valid task number.")
+        except IndexError:
+            print("Invalid task number. Please enter a number in the list.")
 
 
-@click.command()
 def export_as_cvs_file():
     """ Export timesheet (task list) to a CVS file. """
 
@@ -115,17 +144,16 @@ def export_as_cvs_file():
             
             thewriter.writerow({'name': task["name"], 'status': timer_status, 'time':task["time_taken"]})
 
-    click.echo(f"\nTimsheet exported!")
+    print(f"\nTimsheet exported!")
 
     return menu()
 
 
-@click.command()
 def show_tasks():
     """ Print the current task list. """
 
-    click.echo("\nTASKS:")
-    click.echo("-------")
+    print("\nTASKS:")
+    print("-------")
 
     for i, task in enumerate(tasks, start=1):
 
@@ -136,7 +164,7 @@ def show_tasks():
         else:
             timer_status = "Timer Not Started"
 
-        click.echo(f"{i}. {task['name']} -> {timer_status}")
+        print(f"{i}. {task['name']} -> {timer_status}")
     
     return menu()
 
