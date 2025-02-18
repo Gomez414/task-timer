@@ -41,3 +41,7 @@ Export a timesheet as CVS file: Allows you to move your task list/timesheet into
 cvs file. This can then be imported into Excel or Google Sheet for a sheet form.
 
 Exit: End the program.
+
+## Contact Information
+
+If you have any questions, feel free to email me at abraham.gomez@student.cune.edu.
